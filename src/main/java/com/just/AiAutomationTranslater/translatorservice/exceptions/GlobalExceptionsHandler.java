@@ -95,7 +95,7 @@ public class GlobalExceptionsHandler {
         log.warn("Data integrity violation", ex);
         return buildResponseEntity(HttpStatus.CONFLICT, "Data conflicts with an existing record");
     }
-/*
+/**
     @ExceptionHandler(TranslationWorkflowException.class)
     public ResponseEntity<Response<Void>> handleTranslationWorkflowException(TranslationWorkflowException ex) {
         Response<Void> response = Response.<Void>builder()
