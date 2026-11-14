@@ -58,5 +58,4 @@ public class AdminController {
     public ResponseEntity<Response<Void>> deActivateUserByEmail(@RequestParam String email){
         return ResponseEntity.ok(userService.deActivateUserByEmail(email));
     }
-
 }
