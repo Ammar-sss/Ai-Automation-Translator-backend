@@ -13,7 +13,8 @@ public class SaveTermRequest {
     private String termWord;
     @NotNull
     private LanguageTarget sourceLanguage;
-    @NotNull  private LanguageTarget targetLanguage;
+    @NotNull
+    private LanguageTarget targetLanguage;
     private String exampleSentence;
     private Set<String> termDefinitions;
     private String exampleDefinition;
