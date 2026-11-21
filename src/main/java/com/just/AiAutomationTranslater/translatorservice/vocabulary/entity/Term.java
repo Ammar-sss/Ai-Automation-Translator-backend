@@ -1,6 +1,7 @@
 package com.just.AiAutomationTranslater.translatorservice.vocabulary.entity;
 
 import com.just.AiAutomationTranslater.translatorservice.auth_user.entity.User;
+import com.just.AiAutomationTranslater.translatorservice.enums.LanguageTarget;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,7 +16,9 @@ import java.util.Set;
 @AllArgsConstructor
 @Table(
         name = "terms",
-        uniqueConstraints = @UniqueConstraint(name = "uc_user_term", columnNames = {"user_id", "term_word"})
+        uniqueConstraints = @UniqueConstraint(
+                name = "uc_user_term",
+                columnNames = {"user_id", "term_word", "source_language", "target_language"})
 )
 public class Term {
 
@@ -41,6 +44,14 @@ public class Term {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private LanguageTarget sourceLanguage;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private LanguageTarget targetLanguage;
 
     public void addTermDefinition(TermDefinition d) {
         termDefinitions.add(d);

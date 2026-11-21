@@ -1,7 +1,7 @@
 package com.just.AiAutomationTranslater.translatorservice.vocabulary.controller;
 
 import com.just.AiAutomationTranslater.translatorservice.res.Response;
-import com.just.AiAutomationTranslater.translatorservice.translation.dto.AiResponse;
+import com.just.AiAutomationTranslater.translatorservice.vocabulary.dto.SaveTermRequest;
 import com.just.AiAutomationTranslater.translatorservice.vocabulary.dto.TermDTO;
 import com.just.AiAutomationTranslater.translatorservice.vocabulary.service.VocabularyService;
 import jakarta.validation.Valid;
@@ -19,8 +19,8 @@ public class VocabularyController {
     private final VocabularyService vocabularyService;
 
     @PostMapping
-    public ResponseEntity<Response<TermDTO>> confirmTermSave(@RequestBody AiResponse aiResponse) {
-        return ResponseEntity.ok(vocabularyService.confirmTermSave(aiResponse));
+    public ResponseEntity<Response<TermDTO>> confirmTermSave(@Valid @RequestBody SaveTermRequest request) {
+        return ResponseEntity.ok(vocabularyService.confirmTermSave(request));
     }
 
     @GetMapping("/{id}")
