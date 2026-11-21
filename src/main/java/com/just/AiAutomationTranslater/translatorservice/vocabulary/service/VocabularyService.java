@@ -2,6 +2,7 @@ package com.just.AiAutomationTranslater.translatorservice.vocabulary.service;
 
 import com.just.AiAutomationTranslater.translatorservice.res.Response;
 import com.just.AiAutomationTranslater.translatorservice.translation.dto.AiResponse;
+import com.just.AiAutomationTranslater.translatorservice.vocabulary.dto.SaveTermRequest;
 import com.just.AiAutomationTranslater.translatorservice.vocabulary.dto.TermDTO;
 import com.just.AiAutomationTranslater.translatorservice.vocabulary.entity.Term;
 
@@ -15,7 +16,7 @@ public interface VocabularyService {
     Response<TermDTO> updateTerm(TermDTO termDTO);
     Response<Void>  deleteTermById(Long id);
     Response<TermDTO> findByTermWord(String termWord);
-    Response<TermDTO> confirmTermSave(AiResponse aiResponse);
+    Response<TermDTO> confirmTermSave(SaveTermRequest request);
 
     Optional<TermDTO> findByNormalizedTerm(String normalizationTerm);
 }

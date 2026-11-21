@@ -5,7 +5,7 @@ import com.just.AiAutomationTranslater.translatorservice.auth_user.service.UserS
 import com.just.AiAutomationTranslater.translatorservice.exceptions.ConflictException;
 import com.just.AiAutomationTranslater.translatorservice.exceptions.NotFoundException;
 import com.just.AiAutomationTranslater.translatorservice.res.Response;
-import com.just.AiAutomationTranslater.translatorservice.translation.dto.AiResponse;
+import com.just.AiAutomationTranslater.translatorservice.vocabulary.dto.SaveTermRequest;
 import com.just.AiAutomationTranslater.translatorservice.vocabulary.dto.TermDTO;
 import com.just.AiAutomationTranslater.translatorservice.vocabulary.entity.Example;
 import com.just.AiAutomationTranslater.translatorservice.vocabulary.entity.ExampleDefinition;
@@ -106,42 +106,47 @@ public class VocabularyServiceImpl implements  VocabularyService {
 
     @Override
     @Transactional
-    public Response<TermDTO> confirmTermSave(AiResponse aiResponse) {
+    public Response<TermDTO> confirmTermSave(SaveTermRequest req) {
         User user = userService.getCurrentUser();
-        if (termRepository.existsByTermWordAndUserId(aiResponse.getTermWord(), user.getId())) {
-            throw new ConflictException("Term already exists");
+
+        if (termRepository.existsByTermWordAndUserIdAndSourceLanguageAndTargetLanguage(
+                req.getTermWord(), user.getId(), req.getSourceLanguage(), req.getTargetLanguage())) {
+            throw new ConflictException("Term already exists for this language pair");
         }
 
         Term term = Term.builder()
-                .termWord(aiResponse.getTermWord())
+                .termWord(req.getTermWord())
+                .sourceLanguage(req.getSourceLanguage())
+                .targetLanguage(req.getTargetLanguage())
                 .user(user)
                 .build();
 
-        if (aiResponse.getTermDefinitions() != null) {
-            for (String defi : aiResponse.getTermDefinitions()){
+        if (req.getTermDefinitions() != null) {
+            for (String defi : req.getTermDefinitions()){
                 TermDefinition termDefinition = new TermDefinition();
                 termDefinition.setWordDefinition(defi);
                 term.addTermDefinition(termDefinition);
             }
         }
 
-        if (aiResponse.getExampleSentence() != null) {
+        if (req.getExampleSentence() != null) {
             Example example =  new Example();
-            example.setExampleSentence(aiResponse.getExampleSentence());
+            example.setExampleSentence(req.getExampleSentence());
             term.addTermExample(example);
         }
 
-        if (aiResponse.getExampleDefinition() != null) {
+        if (req.getExampleDefinition() != null) {
             ExampleDefinition exampleDefinition = new ExampleDefinition();
-            exampleDefinition.setExampleDefinition(aiResponse.getExampleDefinition());
+            exampleDefinition.setExampleDefinition(req.getExampleDefinition());
             term.addExampleDefinition(exampleDefinition);
         }
 
-        termRepository.save(term);
+        Term saved = termRepository.save(term);
 
         return Response.<TermDTO>builder()
-                .statusCode(HttpStatus.OK.value()).
-                message("Term saved successfully")
+                .statusCode(HttpStatus.OK.value())
+                .message("Term saved successfully")
+                .data(modelMapper.map(saved, TermDTO.class))   // you were returning no data before
                 .build();
     }
 
