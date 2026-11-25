@@ -17,6 +17,8 @@ import com.just.AiAutomationTranslater.translatorservice.role.entity.Role;
 import com.just.AiAutomationTranslater.translatorservice.role.repository.RoleRepository;
 import com.just.AiAutomationTranslater.translatorservice.security.JwtService;
 import com.just.AiAutomationTranslater.translatorservice.security.TokenHasher;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -197,50 +199,54 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional(noRollbackFor = UnauthorizedAccessException.class)
     public Response<LoginResponse> refreshToken(String refreshToken) {
         try {
-            // Hash the incoming token to search for it in the database
+            // 1. Cryptographically verify signature, issuer, and expiry first
+            Claims claims = jwtService.parseRefreshClaims(refreshToken);
+            String emailFromToken = claims.getSubject();
+
+            // 2. Hash incoming token for DB lookup
             String hashedToken = TokenHasher.sha256(refreshToken);
 
-            // Find the refresh token in the database
             RefreshToken storedToken = refreshTokenRepository.findByToken(hashedToken)
                     .orElseThrow(() -> new UnauthorizedAccessException("Invalid refresh token"));
 
-            // Check if token has been revoked (reuse detection)
-            if (storedToken.isRevoked()) {
-                // Revoke all tokens for this user as a security measure
-                refreshTokenRepository.revokeAllByUserEmail(storedToken.getUserEmail());
-                throw new UnauthorizedAccessException("Invalid refresh token");
-            }
-            if (storedToken.isExpired()) {
-                throw new UnauthorizedAccessException("Invalid refresh token");
+            // 3. Verify user binding
+            if (!storedToken.getUserEmail().equalsIgnoreCase(emailFromToken)) {
+                throw new UnauthorizedAccessException("Token subject mismatch");
             }
 
-            // Find the user by email
+            // 4. Token reuse detection
+            if (storedToken.isRevoked()) {
+                refreshTokenRepository.revokeAllByUserEmail(storedToken.getUserEmail());
+                throw new UnauthorizedAccessException("Revoked token reused. Session terminated.");
+            }
+
+            if (storedToken.isExpired()) {
+                throw new UnauthorizedAccessException("Expired refresh token");
+            }
+
             User user = userRepository.findByEmail(storedToken.getUserEmail())
                     .orElseThrow(() -> new UnauthorizedAccessException("User not found"));
 
-            // Check if user is enabled
             if (!user.isEnabled()) {
                 throw new UnauthorizedAccessException("Account is disabled");
             }
 
-            // Revoke the current refresh token (token rotation)
+            // 5. Rotate token
             storedToken.setRevoked(true);
             storedToken.setRevokedDate(java.time.Instant.now());
-            // Track what token replaced this one (store hash of new token)
             String newRefreshToken = jwtService.generateRefreshToken(user.getEmail());
             String hashedNewRefreshToken = TokenHasher.sha256(newRefreshToken);
             storedToken.setReplacedByToken(hashedNewRefreshToken);
             refreshTokenRepository.save(storedToken);
 
-            // Generate new access and refresh tokens
             String newAccessToken = jwtService.generateAccessToken(user.getEmail());
-
-            // Save the new refresh token to database (hashed for security)
             return buildRefreshTokenAndLoginResponse(hashedNewRefreshToken, user, newRefreshToken, newAccessToken, "Token refreshed successfully");
-        } catch (Exception e) {
-            // Token is invalid, expired, or malformed
+
+        } catch (JwtException | IllegalArgumentException e) {
+            log.warn("Malformed or expired refresh JWT: {}", e.getMessage());
             return Response.<LoginResponse>builder()
                     .statusCode(HttpStatus.UNAUTHORIZED.value())
                     .message("Invalid or expired refresh token")

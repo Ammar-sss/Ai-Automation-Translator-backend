@@ -59,7 +59,7 @@ public class RoleServiceImpl implements RoleService {
 
         roleRepository.findByRoleName(roleDTO.getRoleName())
                 .filter(role -> !role.getId().equals(id))
-                .ifPresent(role -> {
+                .ifPresent(_ -> {
                     throw new ConflictException("Role name already exists");
                 });
 
@@ -81,6 +81,11 @@ public class RoleServiceImpl implements RoleService {
         log.info("delete by id: {}", id);
 
         Role currentRole = roleRepository.findById(id).orElseThrow(() -> new NotFoundException("Role Not Found"));
+
+        String name = currentRole.getRoleName();
+        if ("USER".equalsIgnoreCase(name) || "ADMIN".equalsIgnoreCase(name)) {
+            throw new ConflictException("System roles (ADMIN, USER) cannot be deleted");
+        }
 
         roleRepository.delete(currentRole);
 

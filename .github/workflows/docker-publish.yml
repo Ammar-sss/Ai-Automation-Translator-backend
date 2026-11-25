@@ -86,3 +86,8 @@ jobs:
 
       - name: Push image
         run: printf '%s\n' "${{ steps.meta.outputs.tags }}" | xargs -n1 docker push
+        
+      - name: Trigger Production Deployment
+        if: ${{ secrets.RENDER_DEPLOY_HOOK_URL != '' }}
+        run: |
+         curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
