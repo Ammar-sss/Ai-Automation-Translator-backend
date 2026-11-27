@@ -1,0 +1,13 @@
+version: "1.0"
+
+profile:
+  name: qodana.starter
+
+exclude:
+  # Ignores transitive scanner noise in pom.xml where Mend has insufficient information
+  - name: VulnerableDeclaredDependencyInspection
+    paths:
+      - pom.xml
+
+projectJDK: "25"
+linter: jetbrains/qodana-jvm:2026.2

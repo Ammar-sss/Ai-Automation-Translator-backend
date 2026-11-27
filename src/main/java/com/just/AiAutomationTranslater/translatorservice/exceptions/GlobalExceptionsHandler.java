@@ -6,6 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -15,7 +16,6 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import java.nio.file.AccessDeniedException;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -33,16 +33,16 @@ public class GlobalExceptionsHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Response<Void>> handleAccessDenied(AccessDeniedException ex) {
-        return buildResponseEntity(HttpStatus.FORBIDDEN, "Access denied");
+        return buildResponseEntity(HttpStatus.FORBIDDEN, "Access denied: " + ex.getMessage());
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<Response<Void>> handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex) {
+    public ResponseEntity<Response<Void>> handleMethodNotAllowed() {
         return buildResponseEntity(HttpStatus.METHOD_NOT_ALLOWED, "Method not allowed");
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<Response<Void>> handleNoResource(NoResourceFoundException ex) {
+    public ResponseEntity<Response<Void>> handleNoResource() {
         return buildResponseEntity(HttpStatus.NOT_FOUND, "Resource not found");
     }
 
@@ -64,9 +64,11 @@ public class GlobalExceptionsHandler {
             IllegalArgumentException.class,
             HandlerMethodValidationException.class,
             MethodArgumentTypeMismatchException.class,
-            MissingServletRequestParameterException.class
+            MissingServletRequestParameterException.class,
+            BadRequestException.class
     })
-    public ResponseEntity<Response<Void>> handleBadRequestException(BadRequestException ex) {
+    public ResponseEntity<Response<Void>> handleBadRequestException(Exception ex) {
+        log.warn("Bad request encountered: {}", ex.getMessage());
         return buildResponseEntity(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 

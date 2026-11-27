@@ -16,11 +16,12 @@ import com.just.AiAutomationTranslater.translatorservice.vocabulary.service.Voca
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -51,20 +52,15 @@ public class VocabularyServiceImpl implements  VocabularyService {
     }
 
     @Override
-    public Response<List<TermDTO>> getAllTerms() {
-
+    @Transactional(readOnly = true)
+    public Response<Page<TermDTO>> getAllTerms(Pageable pageable) {
         User user = userService.getCurrentUser();
-
-        List<Term> terms = termRepository.findAllByUserId(user.getId());
-
-        List<TermDTO> termDTOS = terms.stream()
-                .map(term -> modelMapper.map(term, TermDTO.class))
-                .toList();
-
-        return Response.<List<TermDTO>>builder()
+        Page<Term> termPage = termRepository.findAllByUserId(user.getId(), pageable);
+        Page<TermDTO> dtoPage = termPage.map(term -> modelMapper.map(term, TermDTO.class));
+        return Response.<Page<TermDTO>>builder()
                 .statusCode(HttpStatus.OK.value())
-                .message("All Terms retrieved successfully")
-                .data(termDTOS)
+                .message("Terms retrieved successfully")
+                .data(dtoPage)
                 .build();
     }
 

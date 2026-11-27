@@ -15,6 +15,7 @@ public enum LanguageTarget {
     RUSSIAN,
     KURDISH_SORANI,
     KURDISH_KURMANJI,
+    KURDISH_BADINI,
     DUTCH;
 
 
